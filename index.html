@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - Seguimiento</title>
+    <title>Panel de Administración - Jonathan</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDK Compat (Necesario para que funcione directo en navegador) -->
+    <!-- Firebase SDK Compat -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -14,45 +14,58 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="bg-[#fdfdfd] min-h-screen text-slate-900">
 
     <div class="max-w-6xl mx-auto p-4 md:p-8">
-        <!-- Encabezado -->
-        <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-8 rounded-3xl shadow-sm border border-slate-100 gap-4">
+        <!-- Encabezado Principal -->
+        <header class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 gap-6">
             <div>
-                <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Panel de Control</h1>
-                <p class="text-slate-500 font-medium italic">Proyecto: SeguimientoApp</p>
+                <h1 class="text-4xl font-black tracking-tight text-slate-900">Panel Central</h1>
+                <p class="text-slate-400 font-medium mt-1">Seguimiento de Reportes Diarios</p>
             </div>
-            <div id="status-badge" class="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 uppercase tracking-widest">
-                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                Iniciando...
+            <div id="status-container" class="flex items-center gap-3 px-6 py-3 rounded-2xl text-sm font-bold bg-slate-100 text-slate-400 transition-all duration-500 border border-slate-100">
+                <div id="status-pulse" class="w-3 h-3 rounded-full bg-slate-300"></div>
+                <span id="status-text">Iniciando sistema...</span>
             </div>
         </header>
 
-        <!-- Alertas -->
-        <div id="error-container" class="hidden mb-6 p-6 bg-red-50 border-l-4 border-red-500 text-red-800 rounded-2xl shadow-sm">
-            <p class="font-bold">Error detectado:</p>
-            <p id="error-message" class="text-sm"></p>
+        <!-- Monitor de errores visible -->
+        <div id="error-display" class="hidden mb-8 p-6 bg-red-50 border border-red-100 rounded-[2rem]">
+            <div class="flex items-start gap-4 text-red-700">
+                <svg class="w-8 h-8 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <div>
+                    <p class="font-bold text-lg">Aviso de Configuración</p>
+                    <p id="error-detail" class="text-sm opacity-80 font-mono mb-3"></p>
+                    <div class="bg-white/50 p-4 rounded-xl border border-red-100 text-xs space-y-2">
+                        <p class="font-bold text-red-800">CÓMO SOLUCIONAR EL ERROR DE API KEY:</p>
+                        <ol class="list-decimal list-inside space-y-1">
+                            <li>Ve a <strong>Authentication</strong> > <strong>Sign-in method</strong> y activa <strong>Anónimo</strong>.</li>
+                            <li>Ve a <strong>Settings</strong> > <strong>Authorized Domains</strong> y añade tu dominio de GitHub.</li>
+                            <li>Asegúrate de que las <strong>Reglas de Firestore</strong> permitan lectura pública temporalmente.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Tabla -->
-        <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100">
+        <!-- Tabla de Datos -->
+        <div class="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 overflow-hidden border border-slate-50">
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left">
                     <thead>
-                        <tr class="bg-slate-50/50 text-[11px] uppercase tracking-[0.2em] text-slate-400 font-bold">
-                            <th class="p-6 border-b">Fecha de Envío</th>
-                            <th class="p-6 border-b">Nombre del Joven</th>
-                            <th class="p-6 border-b">Actividad / Logros</th>
-                            <th class="p-6 border-b">Estado</th>
+                        <tr class="bg-slate-50/30 text-[11px] uppercase tracking-[0.3em] text-slate-400 font-bold border-b border-slate-50">
+                            <th class="p-8">Fecha</th>
+                            <th class="p-8">Joven / Estudiante</th>
+                            <th class="p-8">Observaciones de Actividad</th>
+                            <th class="p-8 text-center">Estatus</th>
                         </tr>
                     </thead>
-                    <tbody id="data-table-body" class="divide-y divide-slate-50">
+                    <tbody id="table-content" class="divide-y divide-slate-50">
                         <tr>
-                            <td colspan="4" class="p-20 text-center">
-                                <div class="flex flex-col items-center justify-center">
-                                    <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                                    <p class="text-slate-500 font-semibold">Conectando a SeguimientoApp...</p>
+                            <td colspan="4" class="p-32 text-center">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-16 h-16 border-[6px] border-indigo-600 border-t-transparent rounded-full animate-spin mb-6"></div>
+                                    <p class="text-slate-400 font-bold text-xl tracking-tight">Sincronizando con la nube...</p>
                                 </div>
                             </td>
                         </tr>
@@ -63,77 +76,114 @@
     </div>
 
     <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            const statusBadge = document.getElementById('status-badge');
-            const tableBody = document.getElementById('data-table-body');
-            const errorContainer = document.getElementById('error-container');
-            const errorMessage = document.getElementById('error-message');
+        // Configuración oficial Jonathan
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgPzCTXFK_tiUUAsA0GoA7IIERdJt3A9E",
+            authDomain: "seguimientoapp-24a8a.firebaseapp.com",
+            projectId: "seguimientoapp-24a8a",
+            storageBucket: "seguimientoapp-24a8a.firebasestorage.app",
+            messagingSenderId: "875279227213",
+            appId: "1:875279227213:web:2a3729b424e4a2d46a3f04"
+        };
 
-            function showError(msg) {
-                errorContainer.classList.remove('hidden');
-                errorMessage.textContent = msg;
-                statusBadge.className = "px-4 py-2 rounded-full text-xs font-bold bg-red-100 text-red-700 uppercase tracking-wider";
-                statusBadge.textContent = "Error de Conexión";
+        const statusContainer = document.getElementById('status-container');
+        const statusPulse = document.getElementById('status-pulse');
+        const statusText = document.getElementById('status-text');
+        const tableContent = document.getElementById('table-content');
+        const errorDisplay = document.getElementById('error-display');
+        const errorDetail = document.getElementById('error-detail');
+
+        function updateUI(type, message) {
+            if (type === 'live') {
+                statusContainer.className = "flex items-center gap-3 px-6 py-3 rounded-2xl text-sm font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 shadow-sm shadow-emerald-100";
+                statusPulse.className = "w-3 h-3 rounded-full bg-emerald-500 animate-ping";
+                statusText.innerText = "SISTEMA EN VIVO";
+                errorDisplay.classList.add('hidden');
+            } else if (type === 'warning') {
+                statusContainer.className = "flex items-center gap-3 px-6 py-3 rounded-2xl text-sm font-bold bg-amber-50 text-amber-600 border border-amber-100";
+                statusPulse.className = "w-3 h-3 rounded-full bg-amber-500";
+                statusText.innerText = "INTENTANDO CONEXIÓN";
+            } else {
+                statusContainer.className = "flex items-center gap-3 px-6 py-3 rounded-2xl text-sm font-bold bg-red-50 text-red-600 border border-red-100";
+                statusPulse.className = "w-3 h-3 rounded-full bg-red-500";
+                statusText.innerText = "ERROR DE ENLACE";
             }
+        }
 
-            // TUS CREDENCIALES REALES
-            const firebaseConfig = {
-                apiKey: "AIzaSyCgPzCTXFK_tiUUAsA0GoA7IIERdJt3A9E",
-                authDomain: "seguimientoapp-24a8a.firebaseapp.com",
-                projectId: "seguimientoapp-24a8a",
-                storageBucket: "seguimientoapp-24a8a.firebasestorage.app",
-                messagingSenderId: "875279227213",
-                appId: "1:875279227213:web:2a3729b424e4a2d46a3f04"
-            };
-
+        async function startApp() {
             try {
-                // Inicializar
-                firebase.initializeApp(firebaseConfig);
-                const db = firebase.firestore();
-                const auth = firebase.auth();
+                // Reiniciar instancias para evitar cache de errores
+                if (firebase.apps.length > 0) {
+                    await Promise.all(firebase.apps.map(app => app.delete()));
+                }
 
-                // Autenticar anónimamente para permitir lectura
-                auth.signInAnonymously().then(() => {
-                    statusBadge.className = "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 uppercase tracking-widest";
-                    statusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Conectado`;
+                const app = firebase.initializeApp(firebaseConfig);
+                const db = firebase.firestore(app);
+                const auth = firebase.auth(app);
 
-                    // IMPORTANTE: Escucha la colección 'reportes'
-                    // Debes asegurarte que tu formulario envíe los datos a esta misma colección
-                    db.collection('reportes').orderBy('fecha', 'desc').onSnapshot((snapshot) => {
-                        tableBody.innerHTML = '';
+                // Forzar un intento de lectura directa si el auth falla
+                // A veces Firestore permite lectura si las reglas son 'if true' incluso sin auth exitoso
+                const connectData = () => {
+                    db.collection('reportes').orderBy('fecha', 'desc').onSnapshot(snap => {
+                        updateUI('live');
+                        tableContent.innerHTML = '';
                         
-                        if (snapshot.empty) {
-                            tableBody.innerHTML = `<tr><td colspan="4" class="p-20 text-center text-slate-400 italic font-medium">No hay reportes en la base de datos aún.</td></tr>`;
+                        if (snap.empty) {
+                            tableContent.innerHTML = `<tr><td colspan="4" class="p-32 text-center text-slate-300 italic font-medium">No hay registros almacenados.</td></tr>`;
                             return;
                         }
 
-                        snapshot.forEach((doc) => {
+                        snap.forEach(doc => {
                             const d = doc.data();
                             const row = document.createElement('tr');
-                            row.className = "hover:bg-slate-50 transition-colors";
+                            row.className = "group hover:bg-indigo-50/20 transition-all duration-300";
                             row.innerHTML = `
-                                <td class="p-6 text-sm text-slate-500">${d.fecha || 'Reciente'}</td>
-                                <td class="p-6">
-                                    <div class="text-sm font-bold text-slate-900">${d.nombreJoven || d.nombre || 'Anónimo'}</div>
+                                <td class="p-8 text-sm text-slate-400 group-hover:text-slate-600 font-medium">${d.fecha || '-'}</td>
+                                <td class="p-8">
+                                    <div class="text-base font-extrabold text-slate-800 group-hover:text-indigo-600 transition-colors">${d.nombreJoven || d.nombre || 'Sin Nombre'}</div>
                                 </td>
-                                <td class="p-6 text-sm text-slate-600">
-                                    ${d.actividad || d.logros || '-'}
+                                <td class="p-8 text-sm text-slate-600 leading-relaxed font-medium">
+                                    <div class="max-w-md bg-slate-50 group-hover:bg-white p-4 rounded-2xl border border-slate-50 group-hover:border-indigo-100 transition-all italic">
+                                        "${d.actividad || d.logros || 'Sin detalles registrados'}"
+                                    </div>
                                 </td>
-                                <td class="p-6 text-center">
-                                    <span class="px-3 py-1 text-[10px] font-black rounded-full bg-indigo-100 text-indigo-700 uppercase">Recibido</span>
+                                <td class="p-8 text-center">
+                                    <span class="inline-flex items-center px-4 py-2 rounded-xl text-[10px] font-black bg-white text-indigo-500 uppercase border-2 border-indigo-50 shadow-sm group-hover:border-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500">
+                                        REGISTRADO
+                                    </span>
                                 </td>
                             `;
-                            tableBody.appendChild(row);
+                            tableContent.appendChild(row);
                         });
-                    }, (err) => {
-                        showError("Revisa las 'Reglas' en Firebase Firestore. Deben permitir la lectura.");
+                    }, err => {
+                        console.error("Firestore Error:", err);
+                        updateUI('error');
+                        errorDisplay.classList.remove('hidden');
+                        errorDetail.innerText = "Error de Datos: " + err.message;
                     });
-                }).catch(err => showError("Error de Auth: " + err.message));
+                };
 
-            } catch (e) {
-                showError("Error de Sistema: " + e.message);
+                // Intentar Auth pero no bloquear la carga de datos si falla la clave (por reglas de Firestore)
+                auth.signInAnonymously()
+                    .then(() => {
+                        connectData();
+                    })
+                    .catch(err => {
+                        console.warn("Auth Falló, intentando lectura directa...", err);
+                        errorDisplay.classList.remove('hidden');
+                        errorDetail.innerText = "Auth Error (" + err.code + "): La API Key no es reconocida. Verifica que el dominio de GitHub esté autorizado en Firebase.";
+                        updateUI('warning');
+                        // Intentamos conectar de todos modos por si las reglas de Firestore son abiertas
+                        connectData();
+                    });
+
+            } catch (err) {
+                console.error("Critical:", err);
+                updateUI('error');
             }
-        });
+        }
+
+        window.onload = startApp;
     </script>
 </body>
 </html>
