@@ -3,192 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control - Seguimiento</title>
-    <!-- Tailwind para el diseño -->
+    <title>Sistema de Seguimiento - Local</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase SDK versiones compatibles (Globales) -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-900">
+<body class="bg-gray-50 text-slate-900 min-h-screen">
 
-    <!-- Pantalla de Carga -->
-    <div id="loading-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-50">
-        <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-        <p class="mt-4 text-slate-500 font-bold tracking-tight">Sincronizando base de datos...</p>
-    </div>
-
-    <!-- Pantalla de Error -->
-    <div id="error-screen" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center bg-white p-6 text-center">
-        <div class="bg-red-100 text-red-600 p-4 rounded-full mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        </div>
-        <h2 class="text-2xl font-black text-slate-800">Error de Acceso</h2>
-        <p id="error-message" class="text-slate-500 mt-2 max-w-sm"></p>
-        <button onclick="location.reload()" class="mt-6 px-8 py-3 bg-slate-900 text-white rounded-xl font-bold">Reintentar</button>
-    </div>
-
-    <!-- Contenido Principal -->
-    <div id="main-content" class="hidden min-h-screen p-4 md:p-10 max-w-6xl mx-auto">
-        <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+    <div class="max-w-4xl mx-auto p-4 md:p-8">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
-                <h1 class="text-4xl font-black text-slate-900 tracking-tighter">Administración</h1>
-                <p class="text-slate-500 font-medium">Panel de seguimiento de jóvenes</p>
+                <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Seguimiento de Jóvenes</h1>
+                <p class="text-slate-500">Gestión local sin necesidad de base de datos externa.</p>
             </div>
-            <div id="user-badge" class="bg-white border border-slate-200 p-2 pr-6 rounded-2xl flex items-center gap-3 shadow-sm">
-                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black" id="user-initial">A</div>
-                <div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estado</p>
-                    <p class="text-xs font-bold text-emerald-600 uppercase" id="user-status">Conectado</p>
-                </div>
+            <div class="flex gap-2">
+                <button onclick="exportarDatos()" class="bg-white border border-slate-200 px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">
+                    Exportar JSON
+                </button>
+                <button onclick="document.getElementById('modal-registro').classList.remove('hidden')" class="bg-indigo-600 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
+                    + Nuevo Registro
+                </button>
             </div>
         </header>
 
         <!-- Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div class="bg-white p-8 rounded-[2.5rem] border border-slate-200">
-                <p class="text-slate-400 text-xs font-bold uppercase mb-2">Total Registros</p>
-                <p class="text-5xl font-black text-slate-900" id="total-count">0</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <p class="text-slate-400 text-xs font-bold uppercase">Total Registros</p>
+                <p id="stat-total" class="text-3xl font-black">0</p>
             </div>
-            <div class="bg-indigo-600 p-8 rounded-[2.5rem] text-white md:col-span-2 shadow-xl shadow-indigo-100 flex flex-col justify-center">
-                <p class="text-indigo-200 text-xs font-bold uppercase mb-2">Sincronización</p>
-                <p class="text-2xl font-bold">Actualizando en tiempo real</p>
+            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <p class="text-slate-400 text-xs font-bold uppercase">Estado Crítico</p>
+                <p id="stat-critico" class="text-3xl font-black text-red-500">0</p>
+            </div>
+            <div class="bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+                <p class="text-indigo-400 text-xs font-bold uppercase">Última Actualización</p>
+                <p id="stat-fecha" class="text-lg font-bold text-indigo-900 leading-tight mt-1">Hoy</p>
             </div>
         </div>
 
         <!-- Tabla -->
-        <div class="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left">
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-100">
-                            <th class="px-8 py-6 text-xs font-bold text-slate-400 uppercase">Joven</th>
-                            <th class="px-8 py-6 text-xs font-bold text-slate-400 uppercase">Mentor</th>
-                            <th class="px-8 py-6 text-xs font-bold text-slate-400 uppercase text-center">Estado</th>
-                            <th class="px-8 py-6 text-xs font-bold text-slate-400 uppercase text-right">Fecha</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase">Joven</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase">Mentor</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase">Estado</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase text-right">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody id="table-body" class="divide-y divide-slate-50">
-                        <!-- Los datos se insertan aquí -->
+                    <tbody id="lista-registros" class="divide-y divide-slate-50">
+                        <!-- Filas dinámicas -->
                     </tbody>
                 </table>
             </div>
-            <div id="empty-state" class="hidden py-20 text-center text-slate-300">
-                <p class="font-bold text-xl italic tracking-tight">No hay datos disponibles en la ruta seleccionada.</p>
+            <div id="vacio" class="hidden py-16 text-center">
+                <p class="text-slate-300 font-bold text-lg">No hay registros guardados en este navegador.</p>
             </div>
         </div>
     </div>
 
+    <!-- Modal Registro -->
+    <div id="modal-registro" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl">
+            <h2 class="text-2xl font-black mb-6">Nuevo Registro</h2>
+            <form id="form-registro" onsubmit="guardarRegistro(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Nombre del Joven</label>
+                    <input type="text" id="nombre" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Nombre del Mentor</label>
+                    <input type="text" id="mentor" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Estado / Sentimiento</label>
+                    <select id="estado" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all">
+                        <option value="Excelente">Excelente 😊</option>
+                        <option value="Regular">Regular 😐</option>
+                        <option value="Crítico">Crítico 🚨</option>
+                    </select>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="document.getElementById('modal-registro').classList.add('hidden')" class="flex-1 px-4 py-3 font-bold text-slate-500 hover:text-slate-800 transition-all">Cancelar</button>
+                    <button type="submit" class="flex-1 bg-slate-900 text-white rounded-xl font-bold py-3 hover:bg-black transition-all shadow-lg shadow-slate-200">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        // --- LÓGICA DE APLICACIÓN (VANILLA JS) ---
-        
-        // 1. Configuración de entorno
-        const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
-        const appId = window.__app_id || 'default-app-id';
-        const initialToken = window.__initial_auth_token;
+        // --- Lógica de persistencia local ---
+        let registros = JSON.parse(localStorage.getItem('seguimiento_data')) || [];
 
-        const loadingScreen = document.getElementById('loading-screen');
-        const errorScreen = document.getElementById('error-screen');
-        const errorMessage = document.getElementById('error-message');
-        const mainContent = document.getElementById('main-content');
-        const tableBody = document.getElementById('table-body');
-        const totalCount = document.getElementById('total-count');
-        const emptyState = document.getElementById('empty-state');
+        function actualizarUI() {
+            const lista = document.getElementById('lista-registros');
+            const vacio = document.getElementById('vacio');
+            lista.innerHTML = '';
 
-        function showError(msg) {
-            loadingScreen.classList.add('hidden');
-            errorScreen.classList.remove('hidden');
-            errorMessage.textContent = msg;
-        }
-
-        async function startApp() {
-            try {
-                // Inicializar Firebase
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-
-                const auth = firebase.auth();
-                const db = firebase.firestore();
-
-                // Autenticación (REGLA 3)
-                if (initialToken) {
-                    await auth.signInWithCustomToken(initialToken);
-                } else {
-                    await auth.signInAnonymously();
-                }
-
-                auth.onAuthStateChanged((user) => {
-                    if (user) {
-                        // REGLA 1: Ruta estricta
-                        const collectionPath = `artifacts/${appId}/public/data/seguimiento_jovenes`;
-                        
-                        // Escuchar datos (REGLA 2: Sin filtros complejos)
-                        db.collection(collectionPath).onSnapshot((snapshot) => {
-                            loadingScreen.classList.add('hidden');
-                            mainContent.classList.remove('hidden');
-                            
-                            const docs = [];
-                            snapshot.forEach(doc => {
-                                docs.push({ id: doc.id, ...doc.data() });
-                            });
-
-                            // Ordenar en memoria (JS)
-                            docs.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-                            
-                            renderTable(docs);
-                        }, (err) => {
-                            console.error(err);
-                            showError("Error de permisos: Verifica que la colección esté en la ruta correcta.");
-                        });
-                    }
-                });
-
-            } catch (err) {
-                console.error(err);
-                showError("No se pudo conectar con Firebase: " + err.message);
-            }
-        }
-
-        function renderTable(data) {
-            totalCount.textContent = data.length;
-            tableBody.innerHTML = '';
-            
-            if (data.length === 0) {
-                emptyState.classList.remove('hidden');
-                return;
+            if (registros.length === 0) {
+                vacio.classList.remove('hidden');
             } else {
-                emptyState.classList.add('hidden');
+                vacio.classList.add('hidden');
             }
 
-            data.forEach(item => {
-                const date = item.timestamp?.seconds 
-                    ? new Date(item.timestamp.seconds * 1000).toLocaleDateString() 
-                    : 'N/A';
-                
-                const badgeClass = item.sentimiento === 'Excelente' ? 'bg-emerald-100 text-emerald-700' :
-                                 item.sentimiento === 'Regular' ? 'bg-amber-100 text-amber-700' : 
-                                 'bg-red-100 text-red-700';
+            let criticos = 0;
 
-                const row = `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-8 py-6 font-bold text-slate-800">${item.nombreJoven || 'Sin nombre'}</td>
-                        <td class="px-8 py-6 text-slate-500 font-medium">${item.mentor || 'N/A'}</td>
-                        <td class="px-8 py-6 text-center">
-                            <span class="px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider ${badgeClass}">
-                                ${item.sentimiento || 'N/A'}
-                            </span>
-                        </td>
-                        <td class="px-8 py-6 text-right text-slate-400 font-mono text-xs">${date}</td>
-                    </tr>
+            registros.forEach((reg, index) => {
+                if(reg.estado === 'Crítico') criticos++;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/50 transition-all";
+                
+                const badgeColor = reg.estado === 'Excelente' ? 'bg-emerald-100 text-emerald-700' : 
+                                  reg.estado === 'Regular' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-bold text-slate-800">${reg.nombre}</td>
+                    <td class="px-6 py-4 text-slate-500">${reg.mentor}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${badgeColor}">
+                            ${reg.estado}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="eliminarRegistro(${index})" class="text-slate-300 hover:text-red-500 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
+                    </td>
                 `;
-                tableBody.insertAdjacentHTML('beforeend', row);
+                lista.appendChild(tr);
             });
+
+            document.getElementById('stat-total').textContent = registros.length;
+            document.getElementById('stat-critico').textContent = criticos;
+            localStorage.setItem('seguimiento_data', JSON.stringify(registros));
         }
 
-        // Iniciar
-        startApp();
+        function guardarRegistro(e) {
+            e.preventDefault();
+            const nuevo = {
+                nombre: document.getElementById('nombre').value,
+                mentor: document.getElementById('mentor').value,
+                estado: document.getElementById('estado').value,
+                fecha: new Date().toISOString()
+            };
+            registros.unshift(nuevo);
+            actualizarUI();
+            document.getElementById('form-registro').reset();
+            document.getElementById('modal-registro').classList.add('hidden');
+        }
+
+        function eliminarRegistro(index) {
+            if(confirm('¿Estás seguro de eliminar este registro?')) {
+                registros.splice(index, 1);
+                actualizarUI();
+            }
+        }
+
+        function exportarDatos() {
+            const blob = new Blob([JSON.stringify(registros, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `seguimiento_${new Date().toLocaleDateString()}.json`;
+            a.click();
+        }
+
+        // Inicializar
+        actualizarUI();
     </script>
 </body>
 </html>
